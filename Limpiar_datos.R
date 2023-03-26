@@ -116,6 +116,7 @@ paie$c_msp <- as.numeric(ifelse(paie$c_msp == "Mucho", "1",
                          ifelse(paie$c_msp == "Algo", "2",
                          ifelse(paie$c_msp == "Poco", "3",
                                               "4")))) 
+
 paie$c_cientificos <- as.numeric(ifelse(paie$c_cientificos == "Mucho", "1",
                                  ifelse(paie$c_cientificos == "Algo", "2",
                                  ifelse(paie$c_cientificos == "Poco", "3",
@@ -124,6 +125,7 @@ paie$c_medicos <- as.numeric(ifelse(paie$c_medicos == "Mucho", "1",
                              ifelse(paie$c_medicos == "Algo", "2",
                              ifelse(paie$c_medicos == "Poco", "3",
                                                   "4"))))
+
 paie$c_oms <- as.numeric(ifelse(paie$c_oms == "Mucho", "1",
                          ifelse(paie$c_oms == "Algo", "2",
                          ifelse(paie$c_oms == "Poco", "3",
@@ -159,7 +161,7 @@ paie$genero <- as.numeric(ifelse(paie$genero %in% c("Mujer", "Mujer trans"), "1"
                           ifelse(paie$genero %in% c("Varón", "Varón trans"), "0",
                                  "99")))
 
-paie$edad <- paie$edad%>%
+paie$edad <- paie$edad%>% #corregimos datos de edad y pasamos a numérico
   gsub("años| |\\.", "", .)%>%
   gsub("8o", "80", .)%>%
   gsub("4p", "40", .)%>%
@@ -167,13 +169,14 @@ paie$edad <- paie$edad%>%
   gsub("720", "72", .)%>%
   as.numeric()
 
-paie <- paie %>%
+paie <- paie %>% #borramos observaciones sin datos en edad y género, ya que necesitamos estos datos para ponderar
   dplyr::filter(!is.na(edad))
 paie <- dplyr::filter(paie, paie$edad >= 18)
 paie <- dplyr::filter(paie, paie$genero != 99)
 
 paie <- paie[, c(1:26, 36, 27:29, 35, 31:34)]
 
+#creamos variables dicotómicas
 paie$conf1_dummy <- ifelse(paie$conf1 <= 2, 1, 0)
 paie$conf2_dummy <- ifelse(paie$conf2 <= 2, 1, 0)
 paie$conf3_dummy <- ifelse(paie$conf3 <= 2, 1, 0)
@@ -181,42 +184,10 @@ paie$conf3_polar <- ifelse(paie$conf3 %in% c(1,5), 1, 0)
 paie$Vac <- ifelse(paie$vacunas1=="0",1,2)
 
 library(writexl)
-write_xlsx(paie, "paie_limpio.xlsx")
+write_xlsx(paie, "paie_limpio.xlsx") #exportamos la base
 
-#Como la variable "cuestionamientos generados por las vacunas contra el COVID-19"
-#presentaba 40 NA para realizar los modelos de probabilidad lineal 
-#se genera una segunda base sin las observaciones que no tienen esta variable
+#Como la variable cuest_dummy presentaba 40 NA y la queremos incorporar en el modelo de probabilidad lineal 
+#se genera una segunda base sin las observaciones que tienen NA en esta variable
 paie_cuest <- paie%>%
   dplyr::filter(paie$cuest_dummy != 99)
-write_xlsx(paie_cuest, "paie_cuest.xlsx")
-
-#cargo WGM-------------------------------------------------
-base <- rio::import(here::here("wgm2018.xlsx"))
-wgm <- dplyr::filter(base, base$WP5 == "194") #Solo Uruguay
-
-wgm <- dplyr::select(wgm, one_of(c("Q24", "Q25", "Q26", "Age",
-                                   "Gender", "Education")))
-names(wgm) <- c("conf1", "conf2", "conf3", "edad", "genero", "educacion")
-wgm <- wgm %>%
-  dplyr::filter(!is.na(conf3))%>% #los elimino
-  dplyr::filter(!conf1 %in% c("99","98"))%>%
-  dplyr::filter(!conf2 %in% c("99","98"))%>%
-  dplyr::filter(!conf3 %in% c("99","98"))%>%
-  dplyr::filter(!edad<18)%>%
-  dplyr::filter(!is.na(educacion))
-wgm$genero <- gsub("1", "0", wgm$genero)
-wgm$genero <- gsub("2", "1", wgm$genero)
-
-wgm$conf_general <- ifelse((wgm$conf1 == 1 | wgm$conf1 == 2) &
-                                        (wgm$conf2 == 1 | wgm$conf2 == 2) &
-                                        (wgm$conf3 == 1 | wgm$conf3 == 2), "1", "0")%>%
-  as.numeric()
-
-wgm$conf1_dummy <- ifelse(wgm$conf1 <= 2, 1, 0)
-wgm$conf2_dummy <- ifelse(wgm$conf2 <= 2, 1, 0)
-wgm$conf3_dummy <- ifelse(wgm$conf3 <= 2, 1, 0)
-
-wgm$conf3_polar <- ifelse(wgm$conf3 %in% c(1,5), 1, 0)
-
-library(writexl)
-write_xlsx(wgm, "wgm_uy.xlsx")
+write_xlsx(paie_cuest, "paie_cuest.xlsx") #exportamos la base reducida
