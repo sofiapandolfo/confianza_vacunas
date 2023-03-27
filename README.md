@@ -1,6 +1,6 @@
 ### Hola!
-Bienvenidx al repositorio de datos para el proyecto Después del COVID: impacto de la discusión sobre las vacunas para
-COVID-19 en la confianza general en la vacunación en Uruguay.
+Bienvenidx al repositorio de datos para el proyecto _Después del COVID: impacto de la discusión sobre las vacunas para
+COVID-19 en la confianza general en la vacunación en Uruguay_.
 
 **En este repositorio podés encontrar:**
 - El cuestionario de encuesta.
